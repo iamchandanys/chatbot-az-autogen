@@ -1,0 +1,6 @@
+autogen-agentchat
+autogen-ext[azure]
+autogen_ext[openai]
+python-dotenv
+azure-identity
+playwright
