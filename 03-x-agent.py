@@ -28,6 +28,25 @@ model_client = AzureOpenAIChatCompletionClient(
         api_key=API_KEY
     )
 
+# Fake database for user policy details
+fake_policy_db = {
+    "12345": {"name": "John Doe", "policy_type": "Health", "status": "Active"},
+    "67890": {"name": "Jane Smith", "policy_type": "Auto", "status": "Expired"},
+    "54321": {"name": "Alice Johnson", "policy_type": "Home", "status": "Active"},
+}
+
+def get_policy_details(policy_number: str) -> dict[str, Any] | None:
+    """
+    Retrieve policy details by policy number from the fake database.
+    
+    Args:
+        policy_number (str): The policy number to search for.
+        
+    Returns:
+        dict[str, Any] | None: The policy details if found, otherwise None.
+    """
+    return fake_policy_db.get(policy_number)
+
 async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) -> dict[str, Any]:
     primary_agent = AssistantAgent(
         "Primary_Agent",
@@ -39,7 +58,7 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         Your team members are:
             Product_Agent: Helps users to get insurance product details.
             Policy_Agent: Helps users to get their policy details.
-            Claim_Agent: Helps users to get their claim details.
+            Claim_Agent: Helps users to log a claim.
         
         When assigning tasks, use this format:
         1. <agent> : <task>
@@ -57,7 +76,8 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
     policy_agent = AssistantAgent(
         "Policy_Agent",
         model_client,
-        system_message="You are a policy agent. You help users to get their policy details."
+        system_message="You are a policy agent. You help users to get their policy details.",
+        tools=[get_policy_details]
     )
     
     claim_agent = AssistantAgent(
@@ -96,7 +116,8 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         await team.load_state(agent_state_disk)
     
     # Run the team
-    result  = await Console(team.run_stream(task=user_message))
+    # result  = await Console(team.run_stream(task=user_message))
+    result  = await team.run(task=user_message)
     
     # Agent state
     agent_state = await team.save_state()
