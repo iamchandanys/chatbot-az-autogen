@@ -1,5 +1,6 @@
 import requests
 from typing import Any
+from system_fake_db import user_insurance_details
 
 def validate_policy_number(policy_number: str) -> str:
     api_url = f"https://emc-b2b-api.azurewebsites.net/api/XAgents/ClaimAgentValidatePolicy/{policy_number}"
@@ -15,26 +16,21 @@ def validate_policy_number(policy_number: str) -> str:
             return f"Failed to validate policy number. API returned status code {response.status_code}."
     except Exception as e:
         return f"An error occurred while validating the policy number: {str(e)}"
-    
-# Fake database for user policy details
-fake_policy_db = {
-    "12345": {"name": "John Doe", "policy_type": "Health", "status": "Active"},
-    "67890": {"name": "Jane Smith", "policy_type": "Auto", "status": "Expired"},
-    "54321": {"name": "Alice Johnson", "policy_type": "Home", "status": "Active"},
-}
 
-def get_policy_details(policy_number: str) -> dict[str, Any] | None:
-    """
-    Retrieve policy details by policy number from the fake database.
+def get_policy_details(policy_number: str) -> None | str:
+    for policy in user_insurance_details:
+        if policy.get("policy_number") == policy_number:
+            return f"Policy found in the database and here's the details: {policy}"
+    return "Policy not found in the database. Please provide a valid policy number."
+
+def get_claim_details(claim_id: str) -> None | str:
+    for policy in user_insurance_details:
+        for claim in policy.get("claims_history"):
+            if claim.get("claim_id") == claim_id:
+                return f"Claim found in the database and here's the details: {claim}"
+            else:
+                return "Claim not found in the database. Please provide a valid claim ID."
     
-    Args:
-        policy_number (str): The policy number to search for.
-        
-    Returns:
-        dict[str, Any] | None: The policy details if found, otherwise None.
-    """
-    return fake_policy_db.get(policy_number)
-        
 def init_chat() -> str:
     api_url = "https://emc-b2b-api.azurewebsites.net/api/XChatBot/InitChat/cd0fa1ea-d376-42b9-9a08-734414a862df/a41cd3d1-b093-4664-96d3-82f30f1aee0e"
     try:
@@ -46,7 +42,7 @@ def init_chat() -> str:
     except Exception as e:
         return f"An error occurred while retrieving policy details: {str(e)}"
     
-def search_product_details(user_message: str) -> str:
+def get_info(user_message: str) -> str:
     """
     Search for MLCP insurance product details based on the user message.
     
@@ -79,5 +75,5 @@ def search_product_details(user_message: str) -> str:
         return f"An error occurred while sending the message: {str(e)}"
     
 if __name__ == "__main__":
-    result = search_product_details("9bdc7ece-763c-4c54-ba77-6360bee93c5b", "I want to know about the health insurance policy.")
+    result = get_claim_details("CLAIM1001x")
     print(result)

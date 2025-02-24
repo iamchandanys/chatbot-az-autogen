@@ -7,8 +7,10 @@ from autogen_agentchat.conditions import TextMentionTermination
 from autogen_agentchat.ui import Console
 from dotenv import load_dotenv
 from system_prompts import claim_agent_system_message, product_agent_system_message, policy_agent_system_message, summary_agent_system_message
+from autogen_core.memory import ListMemory, MemoryContent, MemoryMimeType
+from autogen_core.tools import FunctionTool
 from typing import Any, Mapping
-from system_tools import validate_policy_number, search_product_details, get_policy_details
+from system_tools import validate_policy_number, get_info, get_policy_details, get_claim_details
 
 load_dotenv()
 
@@ -27,25 +29,75 @@ model_client = AzureOpenAIChatCompletionClient(
     )
 
 async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) -> dict[str, Any]:
+    """
+    reflect_on_tool_use
+    - When reflect_on_tool_use is set to True: After the agent calls an external tool and receives its result, it performs an additional inference.
+    - This means the agent re-evaluates the tool's output in the context of the original query to generate a more coherent and contextually integrated response.
+    - When reflect_on_tool_use is set to False: The agent directly returns the tool's result as the final response without further processing or integration.
+    
+    memory
+    - In Microsoft's AutoGen 0.4, the memory parameter in the AssistantAgent allows the agent to access and utilize external memory stores.
+    - This enables the agent to retrieve relevant information based on the current context or user input, enhancing its responses with pertinent data.
+    - For instance, when a user asks a question, the agent can query its memory to find related information and incorporate it into its reply. 
+    - This functionality is particularly useful for tasks requiring context-aware responses or when implementing retrieval-augmented generation (RAG) workflows.
+    """
+    
+    # Create a memory store for the user
+    user_memory = ListMemory()
+    # Add user preferences to memory
+    await user_memory.add(MemoryContent(content="The user name is chandan.", mime_type=MemoryMimeType.TEXT))
+    
+    product_agent_tool = FunctionTool(
+        get_info,
+        name="get_any_info",
+        description="To get any information. Call this tool every time irrespective of the user input.",
+    )
+    
     product_agent = AssistantAgent(
         "Product_Agent",
         model_client,
         system_message=f"{product_agent_system_message}",
-        tools=[search_product_details]
+        tools=[product_agent_tool],
+        reflect_on_tool_use=True,
+        memory=[user_memory]
+    )
+    
+    policy_details_tool = FunctionTool(
+        get_policy_details,
+        name="get_policy_details",
+        description="""
+        To get policy details based on the policy number.
+        Ask the user to provide their policy number and call this tool to retrieve the policy details.
+        """,
+        strict=True
+    )
+    
+    claim_details_tool = FunctionTool(
+        get_claim_details,
+        name="get_claim_details",
+        description="""
+        To get claim details based on the claim ID.
+        Ask the user to provide their claim ID and call this tool to retrieve the claim details.
+        """,
+        strict=True
     )
     
     policy_agent = AssistantAgent(
         "Policy_Agent",
         model_client,
         system_message=f"{policy_agent_system_message}",
-        tools=[get_policy_details]
+        tools=[policy_details_tool, claim_details_tool],
+        reflect_on_tool_use=True,
+        memory=[user_memory]
     )
     
     claim_agent = AssistantAgent(
         "Claim_Agent",
         model_client,
         system_message=f"{claim_agent_system_message}",
-        tools=[validate_policy_number]
+        tools=[validate_policy_number],
+        reflect_on_tool_use=True,
+        memory=[user_memory]
     )
     
     summary_agent = AssistantAgent(
