@@ -10,7 +10,7 @@ from system_prompts import claim_agent_system_message, product_agent_system_mess
 from autogen_core.memory import ListMemory, MemoryContent, MemoryMimeType
 from autogen_core.tools import FunctionTool
 from typing import Any, Mapping
-from system_tools import validate_policy_number, get_info, get_policy_details, get_claim_details, get_policy_documents
+from system_tools import validate_policy_number, get_info, get_policy_details, get_claim_details, get_policy_documents, get_invoice_documents
 
 load_dotenv()
 
@@ -72,16 +72,6 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         strict=True
     )
     
-    claim_details_tool = FunctionTool(
-        get_claim_details,
-        name="get_claim_details",
-        description="""
-        To get claim details based on the claim ID.
-        Ask the user to provide their claim ID and call this tool to retrieve the claim details.
-        """,
-        strict=True
-    )
-    
     policy_document_tool = FunctionTool(
         get_policy_documents,
         name="get_policy_documents",
@@ -92,20 +82,31 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         strict=True
     )
     
+    policy_invoice_tool = FunctionTool(
+        get_invoice_documents,
+        name="get_invoice_documents",
+        description="""
+        To get invoice documents based on the policy number.
+        Ask the user to provide their policy number and call this tool to retrieve the invoice documents.
+        """,
+        strict=True
+    )
+    
+    claim_details_tool = FunctionTool(
+        get_claim_details,
+        name="get_claim_details",
+        description="""
+        To get claim details based on the claim ID.
+        Ask the user to provide their claim ID and call this tool to retrieve the claim details.
+        """,
+        strict=True
+    )
+    
     policy_agent = AssistantAgent(
         "Policy_Agent",
         model_client,
         system_message=f"{policy_agent_system_message}",
-        tools=[policy_details_tool, claim_details_tool, policy_document_tool],
-        reflect_on_tool_use=True,
-        memory=[user_memory]
-    )
-    
-    claim_agent = AssistantAgent(
-        "Claim_Agent",
-        model_client,
-        system_message=f"{claim_agent_system_message}",
-        tools=[validate_policy_number],
+        tools=[policy_details_tool, claim_details_tool, policy_document_tool, policy_invoice_tool],
         reflect_on_tool_use=True,
         memory=[user_memory]
     )
@@ -127,8 +128,8 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         await team.load_state(agent_state_disk)
     
     # Run the team
-    result  = await Console(team.run_stream(task=user_message))
-    # result  = await team.run(task=user_message)
+    # result  = await Console(team.run_stream(task=user_message))
+    result  = await team.run(task=user_message)
     
     # Agent state
     agent_state = await team.save_state()
@@ -142,7 +143,7 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
 async def chat():
     agent_state_disk = None
     
-    for _ in range(100):
+    while True:
         user_input = input("User: ")
         if "stop" in user_input: break
         result = await main(user_input, agent_state_disk)

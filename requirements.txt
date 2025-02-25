@@ -4,3 +4,5 @@ autogen_ext[openai]
 python-dotenv
 azure-identity
 playwright
+reportlab
+requests

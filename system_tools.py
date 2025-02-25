@@ -1,7 +1,7 @@
 import requests
 from typing import Any
 from system_fake_db import user_insurance_details
-from system_helper import process_and_upload_policy
+from system_helper import process_and_upload_policy, process_and_upload_invoice
 
 def validate_policy_number(policy_number: str) -> str:
     api_url = f"https://emc-b2b-api.azurewebsites.net/api/XAgents/ClaimAgentValidatePolicy/{policy_number}"
@@ -32,6 +32,16 @@ def get_policy_documents(policy_number: str) -> None | str:
                 return f"Policy documents uploaded successfully. You can download the documents from the following URL: {pdf_url}"
             else:
                 return "Failed to upload policy documents. Please try again later."
+    return "Policy not found in the database. Please provide a valid policy number."
+
+def get_invoice_documents(policy_number: str) -> None | str:
+    for policy in user_insurance_details:
+        if policy.get("policy_number") == policy_number:
+            pdf_url = process_and_upload_invoice(policy)
+            if pdf_url:
+                return f"Invoice documents uploaded successfully. You can download the documents from the following URL: {pdf_url}"
+            else:
+                return "Failed to upload invoice documents. Please try again later."
     return "Policy not found in the database. Please provide a valid policy number."
 
 def get_claim_details(claim_id: str) -> None | str:
