@@ -10,7 +10,7 @@ from system_prompts import claim_agent_system_message, product_agent_system_mess
 from autogen_core.memory import ListMemory, MemoryContent, MemoryMimeType
 from autogen_core.tools import FunctionTool
 from typing import Any, Mapping
-from system_tools import validate_policy_number, get_info, get_policy_details, get_claim_details
+from system_tools import validate_policy_number, get_info, get_policy_details, get_claim_details, get_policy_documents
 
 load_dotenv()
 
@@ -82,11 +82,21 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         strict=True
     )
     
+    policy_document_tool = FunctionTool(
+        get_policy_documents,
+        name="get_policy_documents",
+        description="""
+        To get policy documents based on the policy number.
+        Ask the user to provide their policy number and call this tool to retrieve the policy documents.
+        """,
+        strict=True
+    )
+    
     policy_agent = AssistantAgent(
         "Policy_Agent",
         model_client,
         system_message=f"{policy_agent_system_message}",
-        tools=[policy_details_tool, claim_details_tool],
+        tools=[policy_details_tool, claim_details_tool, policy_document_tool],
         reflect_on_tool_use=True,
         memory=[user_memory]
     )
@@ -107,9 +117,9 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
     )
     
     team = RoundRobinGroupChat(
-        participants=[product_agent, policy_agent, claim_agent, summary_agent],
+        participants=[product_agent, policy_agent, summary_agent],
         termination_condition=TextMentionTermination("TERMINATE"),
-        max_turns=4
+        max_turns=3
     )
     
     # Load the agent state
