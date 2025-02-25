@@ -128,8 +128,8 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         await team.load_state(agent_state_disk)
     
     # Run the team
-    # result  = await Console(team.run_stream(task=user_message))
-    result  = await team.run(task=user_message)
+    result  = await Console(team.run_stream(task=user_message))
+    # result  = await team.run(task=user_message)
     
     # Agent state
     agent_state = await team.save_state()
