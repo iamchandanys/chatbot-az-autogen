@@ -47,6 +47,8 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
     user_memory = ListMemory()
     # Add user preferences to memory
     await user_memory.add(MemoryContent(content="The user name is chandan.", mime_type=MemoryMimeType.TEXT))
+    await user_memory.add(MemoryContent(content="Chandan's policy number is POLICY008.", mime_type=MemoryMimeType.TEXT))
+    await user_memory.add(MemoryContent(content="Chandan's claim ID is CLAIM1005.", mime_type=MemoryMimeType.TEXT))
     
     # Create a model context that only keeps the last 2 messages (2 user + 2 assistant).
     model_context = BufferedChatCompletionContext(buffer_size=4)
@@ -140,8 +142,8 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         await team.load_state(agent_state_disk)
     
     # Run the team
-    result  = await Console(team.run_stream(task=user_message))
-    # result  = await team.run(task=user_message)
+    # result  = await Console(team.run_stream(task=user_message))
+    result  = await team.run(task=user_message)
     
     # Agent state
     agent_state = await team.save_state()
