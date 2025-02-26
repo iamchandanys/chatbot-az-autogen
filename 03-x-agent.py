@@ -11,6 +11,8 @@ from autogen_core.memory import ListMemory, MemoryContent, MemoryMimeType
 from autogen_core.tools import FunctionTool
 from typing import Any, Mapping
 from system_tools import get_info, get_policy_details, get_claim_details, get_policy_documents, get_invoice_documents
+from autogen_core.model_context import BufferedChatCompletionContext
+import time
 
 load_dotenv()
 
@@ -31,13 +33,12 @@ model_client = AzureOpenAIChatCompletionClient(
 async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) -> dict[str, Any]:
     """
     reflect_on_tool_use
-    - When reflect_on_tool_use is set to True: After the agent calls an external tool and receives its result, it performs an additional inference.
+    - When reflect_on_tool_use is set to True: After the agent calls an external tool/function and receives its result, it performs an additional inference.
     - This means the agent re-evaluates the tool's output in the context of the original query to generate a more coherent and contextually integrated response.
     - When reflect_on_tool_use is set to False: The agent directly returns the tool's result as the final response without further processing or integration.
     
     memory
     - In Microsoft's AutoGen 0.4, the memory parameter in the AssistantAgent allows the agent to access and utilize external memory stores.
-    - This enables the agent to retrieve relevant information based on the current context or user input, enhancing its responses with pertinent data.
     - For instance, when a user asks a question, the agent can query its memory to find related information and incorporate it into its reply. 
     - This functionality is particularly useful for tasks requiring context-aware responses or when implementing retrieval-augmented generation (RAG) workflows.
     """
@@ -46,6 +47,9 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
     user_memory = ListMemory()
     # Add user preferences to memory
     await user_memory.add(MemoryContent(content="The user name is chandan.", mime_type=MemoryMimeType.TEXT))
+    
+    # Create a model context that only keeps the last 2 messages (2 user + 2 assistant).
+    model_context = BufferedChatCompletionContext(buffer_size=4)
     
     product_agent_tool = FunctionTool(
         get_info,
@@ -56,9 +60,10 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
     product_agent = AssistantAgent(
         "Product_Agent",
         model_client,
+        model_context=model_context,
         system_message=f"{product_agent_system_message}",
         tools=[product_agent_tool],
-        reflect_on_tool_use=True,
+        reflect_on_tool_use=False,
         memory=[user_memory]
     )
     
@@ -67,7 +72,8 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         name="get_policy_details",
         description="""
         To get policy details based on the policy number.
-        Ask the user to provide their policy number and call this tool to retrieve the policy details.
+        Ask the user to provide their policy number.
+        Use this tool to retrieve the policy details.
         """,
         strict=True
     )
@@ -77,7 +83,8 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         name="get_policy_documents",
         description="""
         To get policy documents based on the policy number.
-        Ask the user to provide their policy number and call this tool to retrieve the policy documents.
+        Ask the user to provide their policy number.
+        Use this tool to retrieve the policy documents.
         """,
         strict=True
     )
@@ -87,7 +94,8 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         name="get_invoice_documents",
         description="""
         To get invoice documents based on the policy number.
-        Ask the user to provide their policy number and call this tool to retrieve the invoice documents.
+        Ask the user to provide their policy number.
+        Use this tool to retrieve the invoice documents.
         """,
         strict=True
     )
@@ -97,7 +105,8 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         name="get_claim_details",
         description="""
         To get claim details based on the claim ID.
-        Ask the user to provide their claim ID and call this tool to retrieve the claim details.
+        Ask the user to provide their claim ID.
+        Use this tool to retrieve the claim details.
         """,
         strict=True
     )
@@ -105,8 +114,9 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
     policy_agent = AssistantAgent(
         "Policy_Agent",
         model_client,
+        model_context=model_context,
         system_message=f"{policy_agent_system_message}",
-        tools=[policy_details_tool, claim_details_tool, policy_document_tool, policy_invoice_tool],
+        tools=[policy_details_tool, policy_document_tool, policy_invoice_tool, claim_details_tool],
         reflect_on_tool_use=True,
         memory=[user_memory]
     )
@@ -114,7 +124,9 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
     summary_agent = AssistantAgent(
         "Summary_Agent",
         model_client,
+        model_context=model_context,
         system_message=f"{summary_agent_system_message}",
+        memory=[user_memory]
     )
     
     team = RoundRobinGroupChat(
@@ -146,8 +158,12 @@ async def chat():
     while True:
         user_input = input("User: ")
         if "stop" in user_input: break
+        start_time = time.time()
         result = await main(user_input, agent_state_disk)
+        end_time = time.time()
         agent_state_disk = result["agent_state"]
         print(f"Agent: {result['response']}")
+        print(f"Time taken: {end_time - start_time} seconds")
+        print("-" * 50)
     
 asyncio.run(chat())

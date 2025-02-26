@@ -13,9 +13,9 @@ def get_policy_documents(policy_number: str) -> None | str:
         if policy.get("policy_number") == policy_number:
             pdf_url = process_and_upload_policy(policy)
             if pdf_url:
-                return f"Policy documents uploaded successfully. You can download the documents from the following URL: {pdf_url}"
+                return f"User can download the policy documents from the following URL: {pdf_url}"
             else:
-                return "Failed to upload policy documents. Please try again later."
+                return "Failed to get policy documents. Please try again later."
     return "Policy not found in the database. Please provide a valid policy number."
 
 def get_invoice_documents(policy_number: str) -> None | str:
@@ -23,9 +23,9 @@ def get_invoice_documents(policy_number: str) -> None | str:
         if policy.get("policy_number") == policy_number:
             pdf_url = process_and_upload_invoice(policy)
             if pdf_url:
-                return f"Invoice documents uploaded successfully. You can download the documents from the following URL: {pdf_url}"
+                return f"User can download the invoice documents from the following URL: {pdf_url}"
             else:
-                return "Failed to upload invoice documents. Please try again later."
+                return "Failed to get invoice documents. Please try again later."
     return "Policy not found in the database. Please provide a valid policy number."
 
 def get_claim_details(claim_id: str) -> None | str:
