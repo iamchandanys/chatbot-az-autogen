@@ -17,7 +17,7 @@ This project is a chatbot implementation using Microsoft's AutoGen framework and
 1. **Clone the repository**:
 
    ```sh
-   git clone https://github.com/your-username/chatbot-az-autogen.git
+   git clone https://github.com/iamchandanys/chatbot-az-autogen.git
    cd chatbot-az-autogen
    ```
 
@@ -79,23 +79,12 @@ There are two entry points for running the chatbot, each using a different strat
 
 ## Project Structure
 
-- [03_x_agent.py](http://_vscodecontentref_/3): Entry point for the chatbot using [RoundRobinGroupChat](http://_vscodecontentref_/4).
-- [03_x_agent_v2.py](http://_vscodecontentref_/5): Entry point for the chatbot using `SelectorGroupChat`.
-- [system_prompts.py](http://_vscodecontentref_/6): Contains system messages for different agents.
-- [system_tools.py](http://_vscodecontentref_/7): Defines the tools used by the agents to perform various tasks.
-- [README.md](http://_vscodecontentref_/8): This file, providing an overview of the project.
+- [03_x_agent.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/03_x_agent.py): Entry point for the chatbot using [RoundRobinGroupChat](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/README.md).
+- [03_x_agent_v2.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/03_x_agent_v2.py): Entry point for the chatbot using [SelectorGroupChat](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/README.md).
+- [system_prompts.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/system_prompts.py): Contains system messages for different agents.
+- [system_tools.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/system_tools.py): Defines the tools used by the agents to perform various tasks.
+- [README.md](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/README.md): This file, providing an overview of the project.
 - [.env](http://_vscodecontentref_/9): Environment variables for Azure OpenAI credentials (not included in the repository).
-
-## Example
-
-Here's an example of how to interact with the chatbot:
-
-```sh
-User: What is the price of product X?
-Agent: The price of product X is $100.
-User: Can you provide details about my policy number 12345?
-Agent: Your policy number 12345 covers the following...
-```
 
 ## Screenshots
 
@@ -107,4 +96,4 @@ Here are some screenshots of the chatbot in action:
 
 ### Example Conversation (RoundRobinGroupChat)
 
-![Example Conversation](images/ss2.png)
+![Example Conversation](images/ss2.jpg)
