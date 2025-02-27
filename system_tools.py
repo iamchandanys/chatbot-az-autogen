@@ -27,14 +27,13 @@ def get_invoice_documents(policy_number: str) -> None | str:
             else:
                 return "Failed to get invoice documents. Please try again later."
     return "Policy not found in the database. Please provide a valid policy number."
-
-def get_claim_details(claim_id: str) -> None | str:
+            
+def get_claim_details(claim_id: str) -> str:
     for policy in user_insurance_details:
-        for claim in policy.get("claims_history"):
+        for claim in policy.get("claims_history", []):
             if claim.get("claim_id") == claim_id:
-                return f"Claim found in the database and here's the details: {claim}"
-            else:
-                return "Claim not found in the database. Please provide a valid claim ID."
+                return f"Claim found in the database and here are the details: {claim}"
+    return "Claim not found in the database. Please provide a valid claim ID."
     
 def init_chat() -> str:
     api_url = "https://emc-b2b-api.azurewebsites.net/api/XChatBot/InitChat/cd0fa1ea-d376-42b9-9a08-734414a862df/a41cd3d1-b093-4664-96d3-82f30f1aee0e"
@@ -80,5 +79,5 @@ def get_info(user_message: str) -> str:
         return f"An error occurred while sending the message: {str(e)}"
     
 if __name__ == "__main__":
-    result = get_claim_details("CLAIM1001x")
+    result = get_claim_details("CLAIM1004")
     print(result)

@@ -1,18 +1,19 @@
 import asyncio
 import os
+import time
+from typing import Any, Mapping, Sequence
 from autogen_ext.models.openai import AzureOpenAIChatCompletionClient
 from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.teams import RoundRobinGroupChat
-from autogen_agentchat.conditions import TextMentionTermination
+from autogen_agentchat.teams import SelectorGroupChat
+from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
 from autogen_agentchat.ui import Console
+from autogen_agentchat.messages import ChatMessage, AgentEvent
 from dotenv import load_dotenv
-from system_prompts import product_agent_system_message, policy_agent_system_message, summary_agent_system_message
+from system_prompts import product_agent_system_message, policy_agent_system_message
 from autogen_core.memory import ListMemory, MemoryContent, MemoryMimeType
 from autogen_core.tools import FunctionTool
-from typing import Any, Mapping
 from system_tools import get_info, get_policy_details, get_claim_details, get_policy_documents, get_invoice_documents
 from autogen_core.model_context import BufferedChatCompletionContext
-import time
 
 load_dotenv()
 
@@ -30,25 +31,13 @@ model_client = AzureOpenAIChatCompletionClient(
         api_key=API_KEY
     )
 
-async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) -> dict[str, Any]:
-    """
-    reflect_on_tool_use
-    - When reflect_on_tool_use is set to True: After the agent calls an external tool/function and receives its result, it performs an additional inference.
-    - This means the agent re-evaluates the tool's output in the context of the original query to generate a more coherent and contextually integrated response.
-    - When reflect_on_tool_use is set to False: The agent directly returns the tool's result as the final response without further processing or integration.
-    
-    memory
-    - In Microsoft's AutoGen 0.4, the memory parameter in the AssistantAgent allows the agent to access and utilize external memory stores.
-    - For instance, when a user asks a question, the agent can query its memory to find related information and incorporate it into its reply. 
-    - This functionality is particularly useful for tasks requiring context-aware responses or when implementing retrieval-augmented generation (RAG) workflows.
-    """
-    
+async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None, selected_agent: str) -> dict[str, Any]:
     # Create a memory store for the user
     user_memory = ListMemory()
     # Add user preferences to memory
     await user_memory.add(MemoryContent(content="The user name is chandan.", mime_type=MemoryMimeType.TEXT))
-    await user_memory.add(MemoryContent(content="Chandan's policy number is POLICY008.", mime_type=MemoryMimeType.TEXT))
-    await user_memory.add(MemoryContent(content="Chandan's claim ID is CLAIM1005.", mime_type=MemoryMimeType.TEXT))
+    await user_memory.add(MemoryContent(content="Chandan's policy number is POLICY007 & POLICY008.", mime_type=MemoryMimeType.TEXT))
+    await user_memory.add(MemoryContent(content="Chandan's claim ID is CLAIM1004.", mime_type=MemoryMimeType.TEXT))
     
     # Create a model context that only keeps the last 2 messages (2 user + 2 assistant).
     model_context = BufferedChatCompletionContext(buffer_size=4)
@@ -123,18 +112,21 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         memory=[user_memory]
     )
     
-    summary_agent = AssistantAgent(
-        "Summary_Agent",
-        model_client,
-        model_context=model_context,
-        system_message=f"{summary_agent_system_message}",
-        memory=[user_memory]
-    )
+    def selector_func(_: Sequence[AgentEvent | ChatMessage]) -> str | None:
+        if selected_agent == "Product_Agent":
+            return product_agent.name
+        elif selected_agent == "Policy_Agent":
+            return policy_agent.name
+        else:
+            return None
     
-    team = RoundRobinGroupChat(
-        participants=[product_agent, policy_agent, summary_agent],
-        termination_condition=TextMentionTermination("TERMINATE"),
-        max_turns=3
+    team = SelectorGroupChat(
+        participants=[product_agent, policy_agent],
+        model_client=model_client,
+        termination_condition=TextMentionTermination("TERMINATE") | MaxMessageTermination(max_messages=2),
+        allow_repeated_speaker=False,
+        max_turns=1,
+        selector_func=selector_func
     )
     
     # Load the agent state
@@ -154,14 +146,42 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
         "response": result.messages[-1].content
     }
 
+async def init_chat():
+    print("-" * 50)
+    print("The available agents are: Product Agent & Policy Agent.")
+    print("The product agent can assist you with MLCP product information.")
+    print("The policy agent can assist you with your policy details, policy documents, invoice documents, and claim details.")
+    print("Type 'stop' to exit the chat.")
+    print("-" * 50)
+    
+    selected_agent = None
+    
+    selected_agent_input = input("Select an agent (Product Agent/Policy Agent): ")
+    
+    if "product" in selected_agent_input.lower():
+        selected_agent = "Product_Agent"
+    elif "policy" in selected_agent_input.lower():
+        selected_agent = "Policy_Agent"
+        
+    return selected_agent
+    
+
 async def chat():
     agent_state_disk = None
+    selected_agent = None
     
+    print(selected_agent)
+    
+    while selected_agent is None:
+        selected_agent = await init_chat()
+        
+    print("-" * 50)
+        
     while True:
         user_input = input("User: ")
         if "stop" in user_input: break
         start_time = time.time()
-        result = await main(user_input, agent_state_disk)
+        result = await main(user_input, agent_state_disk, selected_agent)
         end_time = time.time()
         agent_state_disk = result["agent_state"]
         print(f"Agent: {result['response']}")
