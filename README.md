@@ -79,8 +79,8 @@ There are two entry points for running the chatbot, each using a different strat
 
 ## Project Structure
 
-- [03_x_agent.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/03_x_agent.py): Entry point for the chatbot using [RoundRobinGroupChat](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/README.md).
-- [03_x_agent_v2.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/03_x_agent_v2.py): Entry point for the chatbot using [SelectorGroupChat](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/README.md).
+- [03_x_agent.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/03_x_agent.py): Entry point for the chatbot using [RoundRobinGroupChat](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/teams.html#creating-a-team).
+- [03_x_agent_v2.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/03_x_agent_v2.py): Entry point for the chatbot using [SelectorGroupChat](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/selector-group-chat.html#selector-group-chat).
 - [system_prompts.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/system_prompts.py): Contains system messages for different agents.
 - [system_tools.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/system_tools.py): Defines the tools used by the agents to perform various tasks.
 - [README.md](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/README.md): This file, providing an overview of the project.
