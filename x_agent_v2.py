@@ -32,6 +32,8 @@ model_client = AzureOpenAIChatCompletionClient(
     )
 
 async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None, selected_agent: str) -> dict[str, Any]:
+    print(f"agent_state_disk: {agent_state_disk}")
+    
     # Create a memory store for the user
     user_memory = ListMemory()
     # Add user preferences to memory

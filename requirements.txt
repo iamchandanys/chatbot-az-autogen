@@ -6,3 +6,5 @@ azure-identity
 playwright
 reportlab
 requests
+flask
+flask_socketio

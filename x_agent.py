@@ -22,13 +22,7 @@ Model_Name = os.getenv("model_name")
 Api_Version = os.getenv("api_version")
 Azure_Endpoint = os.getenv("azure_endpoint")
 
-model_client = AzureOpenAIChatCompletionClient(
-        azure_deployment=deployment_name,
-        model=Model_Name,
-        api_version=Api_Version,
-        azure_endpoint=Azure_Endpoint,
-        api_key=API_KEY
-    )
+
 
 async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) -> dict[str, Any]:
     """
@@ -42,6 +36,13 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
     - For instance, when a user asks a question, the agent can query its memory to find related information and incorporate it into its reply. 
     - This functionality is particularly useful for tasks requiring context-aware responses or when implementing retrieval-augmented generation (RAG) workflows.
     """
+    model_client = AzureOpenAIChatCompletionClient(
+        azure_deployment=deployment_name,
+        model=Model_Name,
+        api_version=Api_Version,
+        azure_endpoint=Azure_Endpoint,
+        api_key=API_KEY
+    )
     
     # Create a memory store for the user
     user_memory = ListMemory()
@@ -140,7 +141,7 @@ async def main(user_message: str, agent_state_disk: Mapping[str, Any] | None) ->
     # Load the agent state
     if agent_state_disk is not None:
         await team.load_state(agent_state_disk)
-    
+        
     # Run the team
     # result  = await Console(team.run_stream(task=user_message))
     result  = await team.run(task=user_message)
@@ -169,3 +170,8 @@ async def chat():
         print("-" * 50)
     
 asyncio.run(chat())
+
+# async def run_main():
+#     print(await main("What is the policy number?", None))
+
+# asyncio.run(run_main())
