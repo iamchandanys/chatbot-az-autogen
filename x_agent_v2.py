@@ -172,8 +172,6 @@ async def chat():
     agent_state_disk = None
     selected_agent = None
     
-    print(selected_agent)
-    
     while selected_agent is None:
         selected_agent = await init_chat()
         
@@ -186,7 +184,6 @@ async def chat():
         result = await main(user_input, agent_state_disk, selected_agent)
         end_time = time.time()
         agent_state_disk = result["agent_state"]
-        print(f"Agent: {result['response']}")
         print(f"Time taken: {end_time - start_time} seconds")
         print("-" * 50)
     
