@@ -1,5 +1,17 @@
 # Chatbot with Azure OpenAI and Microsoft's AutoGen
 
+## Screenshots
+
+Here are some screenshots of the chatbot in action:
+
+### Example Conversation (SelectorGroupChat)
+
+![Example Conversation](images/ss1.png)
+
+### Example Conversation (RoundRobinGroupChat)
+
+![Example Conversation](images/ss2.jpg)
+
 This project is a chatbot implementation using Microsoft's AutoGen framework and Azure OpenAI services. The chatbot is designed to handle various tasks, including retrieving product information, policy details, claim details, and more.
 
 ## Features
@@ -86,15 +98,3 @@ There are two entry points for running the chatbot, each using a different strat
 - [system_tools.py](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/system_tools.py): Defines the tools used by the agents to perform various tasks.
 - [README.md](https://github.com/iamchandanys/chatbot-az-autogen/blob/main/README.md): This file, providing an overview of the project.
 - [.env](http://_vscodecontentref_/9): Environment variables for Azure OpenAI credentials (not included in the repository).
-
-## Screenshots
-
-Here are some screenshots of the chatbot in action:
-
-### Example Conversation (SelectorGroupChat)
-
-![Example Conversation](images/ss1.png)
-
-### Example Conversation (RoundRobinGroupChat)
-
-![Example Conversation](images/ss2.jpg)
